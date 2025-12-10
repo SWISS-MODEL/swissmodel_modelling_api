@@ -34,7 +34,7 @@ Galaxy tool page, once installed).
 License
 -------
 
-License of this Galaxy tool wrapper can be found in LICENSE.
+License of this Galaxy tool wrapper can be found in `LICENSE <LICENSE>`_.
 
 Terms of use of the SWISS-MODEL server can be found at
 https://swissmodel.expasy.org/docs/terms_of_use.
