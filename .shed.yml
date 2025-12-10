@@ -1,0 +1,10 @@
+categories: [Proteomics]
+description: Fully automated protein structure homology-modelling
+homepage_url: https://swissmodel.expasy.org
+name: swissmodel_modelling_api
+owner: bienchen
+long_description: |
+  SWISS-MODEL is a web-based integrated service dedicated to protein structure homology modelling.
+
+  https://swissmodel.expasy.org/docs/help
+
