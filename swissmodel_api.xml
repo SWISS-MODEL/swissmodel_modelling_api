@@ -5,6 +5,7 @@
     <xrefs>
         <xref type="bio.tools">swiss_model</xref>
     </xrefs>
+    <requirements />
     <command detect_errors="aggressive"><![CDATA[
 mkdir -p 'output_dir/'
 && python3 $__tool_directory__/sm_api_wrapper.py
