@@ -91,7 +91,7 @@ Template Library</a>.
                 <param name="template_sequence" type="text" optional="false"
                        label="Template sequence"
                        help="Template sequence as part of the alignment"/>
-                <param name="template_seqres_offset" type="integer" optional="false" label="Template sequence offset">
+                <param name="template_seqres_offset" type="integer" value="0" optional="false" label="Template sequence offset">
                     <help><![CDATA[
 Offset of the template sequence segment with respect to the full template
 sequence.
