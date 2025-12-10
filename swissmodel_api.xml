@@ -72,7 +72,7 @@ PDB ID of the template SMTL entry as found in the
 Template Library</a>.
                     ]]></help>
                 </param>
-                <param name="assembly_id" type="integer" optional="false"
+                <param name="assembly_id" type="integer" value="0" optional="false"
                        label="Assembly ID">
                     <help><![CDATA[
 Assembly ID of the template as found in the
