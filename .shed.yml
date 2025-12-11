@@ -4,7 +4,7 @@ description: Fully automated protein structure homology-modelling
 homepage_url: https://swissmodel.expasy.org
 name: swissmodel_modelling_api
 type: unrestricted
-owner: bienchen
+owner: iuc
 remote_repository_url: https://github.com/SWISS-MODEL/swissmodel_modelling_api
 long_description: |
   SWISS-MODEL is a web-based integrated service dedicated to protein structure homology modelling.
