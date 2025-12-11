@@ -1,4 +1,4 @@
-<tool name="SWISS-MODEL Modelling API" id="swissmodel_modelling_api" profile="21.05" version="1.0.3">
+<tool name="SWISS-MODEL Modelling API" id="swissmodel_modelling_api" profile="21.05" version="1.0.4">
     <description>
         Fully automated protein structure homology-modelling
     </description>
@@ -71,8 +71,9 @@ PDB ID of the template SMTL entry as found in the
 <a href="https://swissmodel.expasy.org/templates/" target="_blank"> SWISS-MODEL
 Template Library</a>.
                     ]]></help>
+                    <validator type="regex" message="Only PDB-like IDs allowed, e.g. '1crn'.">^\d[A-Za-z0-9]{3}$</validator>
                 </param>
-                <param name="assembly_id" type="integer" value="0" optional="false"
+                <param name="assembly_id" type="integer" min="0" value="0" optional="false"
                        label="Assembly ID">
                     <help><![CDATA[
 Assembly ID of the template as found in the
