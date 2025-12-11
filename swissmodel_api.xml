@@ -1,4 +1,4 @@
-<tool name="SWISS-MODEL Modelling API" id="swissmodel_modelling_api" profile="21.05" python_template_version="3.5" version="1.0.3">
+<tool name="SWISS-MODEL Modelling API" id="swissmodel_modelling_api" profile="21.05" version="1.0.3">
     <description>
         Fully automated protein structure homology-modelling
     </description>
@@ -8,7 +8,7 @@
     <requirements />
     <command detect_errors="aggressive"><![CDATA[
 mkdir -p 'output_dir/'
-&& python3 $__tool_directory__/sm_api_wrapper.py
+&& python3 '$__tool_directory__/sm_api_wrapper.py'
                           $output_format.modelcif
                           $output_format.pdb
                           #if $project_title
