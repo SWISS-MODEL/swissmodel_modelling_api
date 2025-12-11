@@ -45,9 +45,7 @@ Token to authenticate to the SWISS-MODEL API. Can be managed on your
         <param name="project_title" type="text" value="Untitled project" optional="true" label="Project title"/>
         <conditional name="project">
             <param name="project_type" type="select" value="automodel" optional="false" label="Modelling setup" display="radio">
-                <option value="automodel" selected="true">
-                    Automodel mode
-                </option>
+                <option value="automodel" selected="true">Automodel mode</option>
                 <option value="alignment">Alignment mode</option>
                 <option value="usertemplate">User template mode</option>
             </param>
