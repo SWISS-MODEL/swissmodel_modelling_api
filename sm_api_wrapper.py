@@ -143,8 +143,8 @@ class _AlignmentWhisperer(_SmApiWhisperer):
         assembly_id,
         project_title="Untitled Project",
     ):
-        # Not sure how to reduce the number of arguments as they are required by
-        # the API, so make an exception in Pylint.
+        # Not sure how to reduce the number of arguments as they are required
+        # by the API, so make an exception in Pylint.
         # pylint: disable=too-many-arguments,too-many-positional-arguments
         """Initialise alignment mode, add mode-specific info to the method."""
         super().__init__(targets, token, project_title=project_title)
@@ -196,7 +196,7 @@ class _UserTemplateWhisperer(_SmApiWhisperer):
 
 
 def _defastarise_targets(sequences):
-    """In case some of the target sequences carry FastA headers, remove them."""
+    """In case some of the targets carry FastA headers, remove them."""
     targets = []
     for seq in sequences:
         seq = seq.split(" ")
