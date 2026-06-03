@@ -94,8 +94,8 @@ class _SmApiWhisperer:
             response = requests.get(url, timeout=360)
             if response.ok is not True:
                 raise RuntimeError(
-                    f"Fetching {file_type} output failed "
-                    + f"({response.status_code})."
+                    f"Fetching {file_type} output failed ("
+                    + f"{response.status_code})."
                 )
             try:
                 os.mkdir(os.path.join(outdir, file_type))
