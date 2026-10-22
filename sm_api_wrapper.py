@@ -1,6 +1,7 @@
 """Wrapper for the SWISS-MODEL API."""
 
 import argparse
+import functools
 import json
 import os
 import sys
@@ -27,6 +28,30 @@ def _api_error_detail(response, max_len=2000):
     return f"\nResponse from SWISS-MODEL:\n{detail}"
 
 
+class _TransientError(Exception):
+    """A request failed in a way that may go away when trying again."""
+
+
+def _send(func, *args, **kwargs):
+    """Send a request, raise _TransientError for failures worth retrying."""
+    # HTTP status codes worth retrying, usually the server being overloaded
+    # or down for maintenance
+    retry_status_codes = (429, 500, 502, 503, 504)
+    try:
+        response = func(*args, **kwargs)
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.ChunkedEncodingError,
+        requests.exceptions.ContentDecodingError,
+    ) as exc:
+        raise _TransientError(type(exc).__name__) from exc
+    if response.status_code in retry_status_codes:
+        raise _TransientError(f"HTTP {response.status_code}")
+
+    return response
+
+
 class _SmApiWhisperer:
     """Parent class for talking to the SWISS-MODEL API."""
 
@@ -39,6 +64,10 @@ class _SmApiWhisperer:
     RUNNING_LONG_AFTER = 60 * 60
     # Stop waiting after this many seconds in RUNNING
     RUNNING_MAX = 24 * 60 * 60
+    # Seconds to wait before trying a failed request again
+    WAIT_RETRY = 31
+    # Give up when the server can not be reached for this many seconds
+    OUTAGE_MAX = 60 * 60
 
     def __init__(self, targets, token, project_title="Untitled Project"):
         self.project_id = None
@@ -50,35 +79,86 @@ class _SmApiWhisperer:
         """Needs to be implemented per project type."""
         raise NotImplementedError
 
+    def _retry(self, send, what):
+        """Call send() again and again while it raises _TransientError.
+
+        Gives up when the server could not be reached for OUTAGE_MAX seconds.
+        Messages must not contain "error:" or "exception:", Galaxy would mark
+        the job as failed even if a retry succeeds.
+        """
+        failing_since = None
+        while True:
+            try:
+                return send()
+            except _TransientError as exc:
+                if failing_since is None:
+                    failing_since = time.monotonic()
+                if time.monotonic() - failing_since > self.OUTAGE_MAX:
+                    print(
+                        "SWISS-MODEL seems to be temporarily unavailable, "
+                        + f"could not reach it while {what} for "
+                        + f"{self.OUTAGE_MAX // 60} minutes ({exc})",
+                        file=sys.stderr,
+                    )
+                    sys.exit(3)
+                print(
+                    f"Could not reach SWISS-MODEL while {what} ({exc}), "
+                    + f"trying again in {self.WAIT_RETRY} s",
+                    file=sys.stderr,
+                )
+                time.sleep(self.WAIT_RETRY)
+
     def submit_request(self):
         """Send off a request to the SM API."""
         json_payload = self.get_json_payload()
         json_payload["project_title"] = self.project_title
-        try:
-            response = requests.post(
+        # Submitting the same job twice should reuse the existing project, so
+        # this can be retried even if the first request reached the server.
+        response = self._retry(
+            functools.partial(
+                _send,
+                requests.post,
                 f"https://swissmodel.expasy.org/{self.PROJECT_TYPE}",
                 headers={"Authorization": f"Token {self.token}"},
                 json=json_payload,
                 timeout=60,
-            )
-        except requests.exceptions.ConnectTimeout:
-            print(
-                "SWISS-MODEL seems to be temporarily unavailable",
-                file=sys.stderr,
-            )
-            sys.exit(3)
+            ),
+            "submitting the modelling job",
+        )
         if response.ok is not True:
             raise RuntimeError(
                 f"Submitting modelling job failed ({response.status_code})"
                 + _api_error_detail(response)
             )
         self.project_id = response.json()["project_id"]
+        print(f"SWISS-MODEL project ID: {self.project_id}")
 
         return response.status_code
 
+    def _fetch_details(self):
+        """Get the current state of the project from the server."""
+        response = _send(
+            requests.get,
+            f"https://swissmodel.expasy.org/project/{self.project_id}/"
+            + "models/full-details/",
+            headers={"Authorization": f"Token {self.token}"},
+            timeout=360,
+        )
+        if response.ok is not True:
+            raise RuntimeError(
+                f"Polling project '{self.project_id}' failed "
+                + f"({response.status_code})"
+                + _api_error_detail(response)
+            )
+        try:
+            return response.json()
+        except ValueError as exc:
+            # e.g. a maintenance page instead of JSON
+            raise _TransientError("response is not JSON") from exc
+
     def wait(self):
         """Poll the API for job to be finished."""
-        response = None
+        details = None
         running_since = None
         # Wait at the end, there is a chance that this project is already
         # available from cache.
@@ -90,14 +170,11 @@ class _SmApiWhisperer:
             #     headers={"Authorization": f"Token {self.token}"},
             #     timeout=360,
             # )
-            response = requests.get(
-                f"https://swissmodel.expasy.org/project/{self.project_id}/"
-                + "models/full-details/",
-                headers={"Authorization": f"Token {self.token}"},
-                timeout=360,
+            details = self._retry(
+                self._fetch_details, f"polling project '{self.project_id}'"
             )
             # Update the status
-            status = response.json()["status"].upper()
+            status = details["status"].upper()
             if status in ["COMPLETED", "FAILED"]:
                 break
             # Wait for some time before the next request, depending on the
@@ -128,7 +205,7 @@ class _SmApiWhisperer:
             else:
                 time.sleep(self.WAIT_RUNNING_LONG)
 
-        return response.json()
+        return details
 
     def fetch_results(
         self, response_object, output_dir, fetch_modelcif=True, fetch_pdb=True
@@ -143,7 +220,11 @@ class _SmApiWhisperer:
                 json.dump(model_json, jfh)
 
         def _fetch_file(url, file_type, outdir):
-            response = requests.get(url, timeout=360)
+            fname = f"model_{os.path.basename(urlsplit(url).path)}"
+            response = self._retry(
+                functools.partial(_send, requests.get, url, timeout=360),
+                f"downloading {fname}",
+            )
             if response.ok is not True:
                 raise RuntimeError(
                     f"Fetching {file_type} output failed ("
@@ -154,7 +235,6 @@ class _SmApiWhisperer:
                 os.mkdir(os.path.join(outdir, file_type))
             except FileExistsError:
                 pass
-            fname = f"model_{os.path.basename(urlsplit(url).path)}"
             with open(os.path.join(outdir, file_type, fname), "wb") as mfh:
                 for chunk in response.iter_content(chunk_size=8192):
                     mfh.write(chunk)
