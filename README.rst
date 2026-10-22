@@ -12,7 +12,7 @@ With the API wrapper, you are able to build protein models
 
 - fully automated (Automodel mode)
 - for a specific alignment provided by the user (Alignment mode)
-- based on user provider template coordinates (User template mode)
+- based on user provided template coordinates (User template mode)
 
 Models can be created in ModelCIF format and legacy PDB format.
 

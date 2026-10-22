@@ -4,7 +4,7 @@
     </description>
     <macros>
         <token name="@TOOL_VERSION@">3.0.1</token>
-        <token name="@VERSION_SUFFIX@">1</token>
+        <token name="@VERSION_SUFFIX@">2</token>
     </macros>
     <xrefs>
         <xref type="bio.tools">swiss_model</xref>
@@ -168,7 +168,7 @@ sequence.
         </test>
     </tests>
     <help><![CDATA[
-The SWISS-MODEL Modelling API tool gives you convenient access to homology models build by `SWISS-MODEL <https://swissmodel.expasy.org>`_ via our `API <https://swissmodel.expasy.org/docs/help#modelling_api>`_.
+The SWISS-MODEL Modelling API tool gives you convenient access to homology models built by `SWISS-MODEL <https://swissmodel.expasy.org>`_ via our `API <https://swissmodel.expasy.org/docs/help#modelling_api>`_.
 
 By default, the tool fetches model coordinates in ModelCIF format from the SWISS-MODEL API. SWISS-MODEL enriches its ModelCIF files with lots of extra information, essential for later reproduction of the computational experiment and enabling for easy deposition at archiving sites, like `Model Archive <https://modelarchive.org>`_. Output format can be toggled in the *Output format options* section for legacy PDB format, in case you are dealing with old-school tools in your workflows. Regardless of the format, output file names follow the pattern ``model_<N>.[cif|pdb]``.
 
@@ -179,7 +179,7 @@ Automodel mode
 
 This mode corresponds to the "Sequence(s)" input mode and just hitting the "Build Model" button on our `web page <https://swissmodel.expasy.org/interactive>`_.
 
-Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produces heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but its not, to produce models for more than one target sequence, you need to run the tool for each sequence separately.
+Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produce heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but it's not: to produce models for more than one target sequence, you need to run the tool for each sequence separately.
 
 Inside an automodel job, the following happens:
 
@@ -195,7 +195,7 @@ Inside an automodel job, the following happens:
 Automodel options
 ~~~~~~~~~~~~~~~~~
 
-Only one or more sequences required, that's all! Single sequence produces monomers and/ or homomers. Multiple sequences produces heteromers.
+Only one or more sequences required, that's all! Single sequence produces monomers and/ or homomers. Multiple sequences produce heteromers.
 
 
 Alignment mode
@@ -203,16 +203,16 @@ Alignment mode
 
 This mode corresponds to the "Target-Template Alignment" input mode on our `web page <https://swissmodel.expasy.org/interactive#alignment>`_.
 
-The alignment mode still builds a model for a target sequence and a template from the `SWISS-MODEL template library <https://swissmodel.expasy.org/templates/>`_ (**SMTL**). But instead of creating the alignment from its own template search run, SWISS-MODEL will use an alignment provided by yourself. The alignment will be mapped onto the template sequence and then a structural model will be build.
+The alignment mode still builds a model for a target sequence and a template from the `SWISS-MODEL template library <https://swissmodel.expasy.org/templates/>`_ (**SMTL**). But instead of creating the alignment from its own template search run, SWISS-MODEL will use an alignment provided by yourself. The alignment will be mapped onto the template sequence and then a structural model will be built.
 
-To properly map a your alignment within the SMTL, you need to provide some extra information. SWISS-MODEL needs the identifier of the template. That's a common PDB ID, it just needs to exist in the SMTL. Then you need to identify the biological assembly of the entry you want your model to be based on... which can be easily done from the SMTL page. The assembly ID comes with the SMTL ID, its the number after the PDB ID and alternative assemblies of an entry can be found at the bottom of an entry page. The last component is the chain name you used for the alignment. Be aware, the SMTL uses its own chain names, so the original PDB chain name may not work. A mapping of chain names is provided on SMTL entry pages.
+To properly map your alignment within the SMTL, you need to provide some extra information. SWISS-MODEL needs the identifier of the template. That's a common PDB ID, it just needs to exist in the SMTL. Then you need to identify the biological assembly of the entry you want your model to be based on... which can be easily done from the SMTL page. The assembly ID comes with the SMTL ID, it's the number after the PDB ID and alternative assemblies of an entry can be found at the bottom of an entry page. The last component is the chain name you used for the alignment. Be aware, the SMTL uses its own chain names, so the original PDB chain name may not work. A mapping of chain names is provided on SMTL entry pages.
 
 Alignment mode options
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - Target sequence: first part of the alignment
 - Template sequence: second sequence of the alignment
-- Template sequence offset: position the template sequence starts at with respect to the full sequence; When using only a sub-sequence of the full sequence, it may be hard to automatically map to the right region in case of repeats, so you need to provide the offset
+- Template sequence offset: position the template sequence starts at with respect to the full sequence; when using only a sub-sequence of the full sequence, it may be hard to automatically map to the right region in case of repeats, so you need to provide the offset
 - PDB/ SMTL ID: PDB ID of the SMTL entry the alignment refers to
 - Assembly ID: ID of the biological assembly to be used as template
 - Chain name: ID of the chain to be used for modelling, needs to be the SMTL name, not the PDB name
@@ -223,7 +223,7 @@ User template mode
 
 This mode corresponds to the "User Template" input mode on our `web page <https://swissmodel.expasy.org/interactive#structure>`_.
 
-The user template mode builds a model for a target sequence and template coordinates provided by you instead of using a SMTL entry for coordinates. The sequence alignment between target and template sequence is still calculated by SWISS-MODEL using HHblits and BLAST, or local alignment algorithm if both methods fail. With the alignment, a structural model is build based on the provided template coordinates.
+The user template mode builds a model for a target sequence and template coordinates provided by you instead of using a SMTL entry for coordinates. The sequence alignment between target and template sequence is still calculated by SWISS-MODEL using HHblits and BLAST, or local alignment algorithm if both methods fail. With the alignment, a structural model is built based on the provided template coordinates.
 
 Inside a user template job, the following happens:
 
@@ -234,8 +234,8 @@ Inside a user template job, the following happens:
 
 User template mode options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Target sequence: sequence to be modelled (post multiple for heteros)
-- Template coordinate file: your template file, must be PDB formatted
+- Target sequence: sequence to be modelled (provide multiple sequences for heteromers)
+- Template coordinates file: your template file, must be PDB formatted
 
 Attribution/ License
 ~~~~~~~~~~~~~~~~~~~~

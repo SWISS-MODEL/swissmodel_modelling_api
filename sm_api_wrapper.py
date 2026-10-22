@@ -55,7 +55,7 @@ class _SmApiWhisperer:
             )
         except requests.exceptions.ConnectTimeout:
             print(
-                "SWISS-MODEL seems to temporarily unavailable",
+                "SWISS-MODEL seems to be temporarily unavailable",
                 file=sys.stderr,
             )
             sys.exit(3)
@@ -147,7 +147,7 @@ class _AutoModelWhisperer(_SmApiWhisperer):
 
 
 class _AlignmentWhisperer(_SmApiWhisperer):
-    """SM alignemt project."""
+    """SM alignment project."""
 
     PROJECT_TYPE = "alignment"
 
@@ -304,7 +304,7 @@ def _parse_args():
     parser.add_argument(
         "project_type",
         choices=("alignment", "automodel", "usertemplate"),
-        help="Kind of project ('alignmet', 'automodel', 'usertemplate')",
+        help="Kind of project ('alignment', 'automodel', 'usertemplate')",
         metavar="<PROJECT TYPE>",
     )
     metas = {
