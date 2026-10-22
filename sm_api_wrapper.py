@@ -429,6 +429,18 @@ def _main():
     # run the modelling job and wait for it to finish
     whsprr.submit_request()
     response = whsprr.wait()
+    # A job without models is still COMPLETED, FAILED means the modelling
+    # pipeline crashed on the server.
+    if response["status"] == "FAILED":
+        print(
+            "SWISS-MODEL modelling job failed for project "
+            + f"'{whsprr.project_id}'. This is an error on the SWISS-MODEL "
+            + "server, not a problem with your input. Please try again "
+            + "later; if it keeps failing, report the project ID to "
+            + "SWISS-MODEL.",
+            file=sys.stderr,
+        )
+        sys.exit(4)
     whsprr.fetch_results(
         response,
         opts.outdir,
