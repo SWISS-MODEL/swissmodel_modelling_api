@@ -31,6 +31,14 @@ class _SmApiWhisperer:
     """Parent class for talking to the SWISS-MODEL API."""
 
     PROJECT_TYPE = ""
+    # Polling intervals in seconds
+    WAIT_QUEUEING = 31
+    WAIT_RUNNING = 17
+    WAIT_RUNNING_LONG = 127
+    # After this many seconds in RUNNING, switch to the long interval
+    RUNNING_LONG_AFTER = 60 * 60
+    # Stop waiting after this many seconds in RUNNING
+    RUNNING_MAX = 24 * 60 * 60
 
     def __init__(self, targets, token, project_title="Untitled Project"):
         self.project_id = None
@@ -71,6 +79,7 @@ class _SmApiWhisperer:
     def wait(self):
         """Poll the API for job to be finished."""
         response = None
+        running_since = None
         # Wait at the end, there is a chance that this project is already
         # available from cache.
         while True:
@@ -88,11 +97,36 @@ class _SmApiWhisperer:
                 timeout=360,
             )
             # Update the status
-            status = response.json()["status"]
-            if status.upper() in ["COMPLETED", "FAILED"]:
+            status = response.json()["status"].upper()
+            if status in ["COMPLETED", "FAILED"]:
                 break
-            # Wait for some time before the next request
-            time.sleep(17)
+            # Wait for some time before the next request, depending on the
+            # status. Lots of jobs finish within ~30s, so the first wait in
+            # the queue may already be the last one.
+            if status in ["INITIALISED", "QUEUEING"]:
+                time.sleep(self.WAIT_QUEUEING)
+                continue
+            if status != "RUNNING":
+                raise RuntimeError(
+                    f"Unknown status '{status}' for project "
+                    + f"'{self.project_id}'"
+                )
+            # The time limit starts when the job starts running.
+            if running_since is None:
+                running_since = time.monotonic()
+            running_for = time.monotonic() - running_since
+            if running_for > self.RUNNING_MAX:
+                print(
+                    "SWISS-MODEL modelling job for project "
+                    + f"'{self.project_id}' is still running after "
+                    + f"{self.RUNNING_MAX // 3600} hours, giving up waiting.",
+                    file=sys.stderr,
+                )
+                sys.exit(5)
+            if running_for < self.RUNNING_LONG_AFTER:
+                time.sleep(self.WAIT_RUNNING)
+            else:
+                time.sleep(self.WAIT_RUNNING_LONG)
 
         return response.json()
 
