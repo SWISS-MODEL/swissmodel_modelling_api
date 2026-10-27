@@ -102,6 +102,9 @@ sequence.
                 <param name="target_sequences" type="data" format="fasta"
                        optional="false" label="Target sequences (multi-FASTA)"
                        help="Provide one or more sequences in FASTA format."/>
+                <!-- format="txt" is intentional: Galaxy does not recognise
+                     all PDB-like files as format "pdb", but SWISS-MODEL
+                     accepts them as templates. -->
                 <param name="template_file" type="data" format="txt"
                        optional="false" label="Template coordinates file"
                        help="File with template coordinates in PDB legacy format."/>
