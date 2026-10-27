@@ -29,7 +29,7 @@ mkdir -p 'output_dir/'
                             --auth-asym-id '${auth_asym_id}'
                             --pdb-id '${pdb_id}'
                             --template-seqres-offset '${template_seqres_offset}'
-                            --template-sequence '${template_sequence}'
+                            --template-sequence-file '${template_sequence}'
                           #elif $project_type == 'usertemplate'
                             --template-file '${template_file}'
                           #end if
