@@ -10,5 +10,5 @@ reports='no'
 [tool.pylint.TYPECHECK]
 max-line-length=80
 
-[tool.pyint.IMPORTS]
+[tool.pylint.IMPORTS]
 deprecated-modules='regsub,TERMIOS,Bastion,rexec,optparse'

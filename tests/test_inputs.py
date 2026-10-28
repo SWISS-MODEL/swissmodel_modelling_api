@@ -31,6 +31,15 @@ def test_read_fasta_records(tmp_path):
         ("t2", "GG"),
         ("t3", ""),
     ]
+    with pytest.raises(
+        ValueError, match=re.escape("Target FASTA record 't3' has no sequence")
+    ):
+        w._defastarise_targets(str(fas))
+
+
+def test_defastarise_targets(tmp_path):
+    fas = tmp_path / "a.fas"
+    fas.write_text(">t1 desc\nMK V\nLL\n\n>t2\nGG\n")
     assert w._defastarise_targets(str(fas)) == ["MKVLL", "GG"]
 
 
@@ -104,6 +113,14 @@ def test_parse_alignment_file_crlf_and_blank_lines(tmp_path):
             + "'offset=abc'",
         ),
         (">t\n\n>1crn.1.A\nTTCC\n", "Alignment file has an empty sequence"),
+        (
+            ">t\nKSCC\n>1crn.1.A OFFSET=5\nTTCC\n",
+            "Template offset must be written as 'offset=X', found 'OFFSET=5'",
+        ),
+        (
+            ">t\nKSCC\n>1crn.1.A offset = 5\nTTCC\n",
+            "Template offset must be written as 'offset=X', found 'offset'",
+        ),
     ],
 )
 def test_parse_alignment_file_invalid(tmp_path, text, message):

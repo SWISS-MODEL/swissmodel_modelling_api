@@ -30,6 +30,7 @@ def fixture_files(tmp_path):
         "aln3": f">t\n{CRN_TRG}\n>1crn.1.A\n{CRN_TPL}\n>extra\nGG\n",
         "fas": ">a\nMKV\n>b\nGGA\n",
         "headers_only": ">a\n>b\n",
+        "missing_chain": ">A\nMVVKAVCVINGDAKG\n>B\n",
         "empty": "",
         "pdb": "ATOM      1  N   THR A   1      17.047  14.099   3.625\n",
     }
@@ -116,7 +117,22 @@ def test_valid_input_reaches_token_check(argv, files, monkeypatch, capsys):
         ),
         (
             ["batch", "automodel", "{out}", "{headers_only}"],
-            "No target sequence given",
+            "Target FASTA record 'a' has no sequence",
+        ),
+        (
+            ["batch", "automodel", "{out}", "{missing_chain}"],
+            "Target FASTA record 'B' has no sequence",
+        ),
+        (
+            [
+                "batch",
+                "usertemplate",
+                "{out}",
+                "{missing_chain}",
+                "-f",
+                "{pdb}",
+            ],
+            "Target FASTA record 'B' has no sequence",
         ),
         (
             ["batch", "automodel", "{out}", "{empty}"],

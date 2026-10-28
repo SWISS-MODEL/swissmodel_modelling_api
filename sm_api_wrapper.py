@@ -371,8 +371,18 @@ def _read_fasta(fasta_file):
 
 
 def _defastarise_targets(fasta_file):
-    """Parse sequences from a Multi-FastA file, removing headers."""
-    return [seq for _, seq in _read_fasta(fasta_file) if seq]
+    """Parse sequences from a Multi-FastA file, removing headers.
+
+    A record without sequence raises ValueError, dropping it would silently
+    turn a heteromer into a different complex.
+    """
+    targets = []
+    for header, seq in _read_fasta(fasta_file):
+        if not seq:
+            raise ValueError(f"Target FASTA record '{header}' has no sequence")
+        targets.append(seq)
+
+    return targets
 
 
 def _parse_alignment_file(fasta_file):
@@ -410,6 +420,11 @@ def _parse_alignment_file(fasta_file):
                 )
             offset = int(value)
             break
+        if word.lower().startswith("offset"):
+            raise ValueError(
+                "Template offset must be written as 'offset=X', found "
+                + f"'{word}'"
+            )
 
     return {
         "target_sequence": target_sequence,
@@ -419,6 +434,38 @@ def _parse_alignment_file(fasta_file):
         "auth_asym_id": match.group(3),
         "template_seqres_offset": offset,
     }
+
+
+def _add_target_sequences(subparser):
+    """Add positional target sequences to a single job subparser."""
+    subparser.add_argument(
+        "target_sequences",
+        help="Target sequence(s) to be modelled; multiple sequences for "
+        + "hetero modelling",
+        metavar="<SEQUENCE>",
+        nargs="+",
+    )
+
+
+def _add_target_sequences_file(subparser):
+    """Add the target FastA file to a batch subparser."""
+    subparser.add_argument(
+        "target_sequences_file",
+        help="FastA file with target sequence to be modelled; "
+        + "Multi-FastA file for multiple target sequences",
+        metavar="<[Multi-]FASTA FILE>",
+    )
+
+
+def _add_template_file(subparser):
+    """Add the template file option to a user template subparser."""
+    subparser.add_argument(
+        "-f",
+        "--template-file",
+        help="PDB formatted file to serve as template for modelling",
+        metavar="<PDB FILE>",
+        required=True,
+    )
 
 
 def _parse_args(argv=None):
@@ -465,32 +512,6 @@ def _parse_args(argv=None):
     batch = modes.add_parser(
         "batch", help="Batch job, sequences given as files"
     ).add_subparsers(**project_types)
-
-    def _add_target_sequences(subparser):
-        subparser.add_argument(
-            "target_sequences",
-            help="Target sequence(s) to be modelled; multiple sequences for "
-            + "hetero modelling",
-            metavar="<SEQUENCE>",
-            nargs="+",
-        )
-
-    def _add_target_sequences_file(subparser):
-        subparser.add_argument(
-            "target_sequences_file",
-            help="FastA file with target sequence to be modelled; "
-            + "Multi-FastA file for multiple target sequences",
-            metavar="<[Multi-]FASTA FILE>",
-        )
-
-    def _add_template_file(subparser):
-        subparser.add_argument(
-            "-f",
-            "--template-file",
-            help="PDB formatted file to serve as template for modelling",
-            metavar="<PDB FILE>",
-            required=True,
-        )
 
     # single job mode
     _add_target_sequences(
