@@ -14,6 +14,9 @@ With the API wrapper, you are able to build protein models
 - for a specific alignment provided by the user (Alignment mode)
 - based on user provided template coordinates (User template mode)
 
+Each mode comes as a single job, with sequences typed into the tool form, and
+as batch, with sequences from datasets, which is the input mode for workflows.
+
 Models can be created in ModelCIF format and legacy PDB format.
 
 Documentation on how to use the tool inside Galaxy is in the tool XML file.

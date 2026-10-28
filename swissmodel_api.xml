@@ -3,8 +3,8 @@
         Fully automated protein structure homology-modelling
     </description>
     <macros>
-        <token name="@TOOL_VERSION@">3.0.1</token>
-        <token name="@VERSION_SUFFIX@">2</token>
+        <token name="@TOOL_VERSION@">4.0.0</token>
+        <token name="@VERSION_SUFFIX@">0</token>
     </macros>
     <xrefs>
         <xref type="bio.tools">swiss_model</xref>
@@ -331,12 +331,22 @@ By default, the tool fetches model coordinates in ModelCIF format from the SWISS
 
 The SWISS-MODEL API provides three major modelling modes: Automodel, alignment and template upload mode.
 
+Input mode
+----------
+
+Each modelling mode can be run in two input modes:
+
+- **Single job**: sequences are typed or pasted into the form. If a pasted sequence starts with a FASTA header word (``>...``), that word is removed.
+- **Batch**: sequences come from datasets. This is the mode to use in workflows. Given a dataset collection instead of a single dataset, Galaxy runs one job per collection element.
+
+**The SWISS-MODEL tool does not split, sort or pair datasets.** Preparing the input datasets is the job of the workflow around the tool, done with other Galaxy tools. The "... in workflows" sections below show how.
+
 Automodel mode
 --------------
 
 This mode corresponds to the "Sequence(s)" input mode and just hitting the "Build Model" button on our `web page <https://swissmodel.expasy.org/interactive>`_.
 
-Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produce heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but it's not: to produce models for more than one target sequence, you need to run the tool for each sequence separately.
+Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produce heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but it's not: to produce models for more than one target sequence, you need to run the tool for each sequence separately, e.g. in batch mode with a collection of single sequence FASTA files.
 
 Inside an automodel job, the following happens:
 
@@ -353,6 +363,13 @@ Automodel options
 ~~~~~~~~~~~~~~~~~
 
 Only one or more sequences required, that's all! Single sequence produces monomers and/ or homomers. Multiple sequences produce heteromers.
+
+Automodel mode in workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**This is done in your workflow, before the SWISS-MODEL tool, not by the tool itself.**
+
+To model many target sequences, one model run per sequence, put them into one multi-FASTA file and run the *Split Fasta* tool on it with split mode "Each sequence in its own dataset". The resulting collection goes into the target sequences input of SWISS-MODEL in batch mode.
 
 
 Alignment mode
@@ -374,6 +391,28 @@ Alignment mode options
 - Assembly ID: ID of the biological assembly to be used as template
 - Chain name: ID of the chain to be used for modelling, needs to be the SMTL name, not the PDB name
 
+In batch mode, all of this comes in one FASTA file with exactly two records: the target sequence first, then the template sequence. The header of the template record starts with the SMTL ID, ``<PDB ID>.<assembly ID>.<chain name>``, optionally followed by ``offset=X`` for the template sequence offset (default 0)::
+
+    >THN_DENCL
+    KSCCPTTAARNQYNICRLPGTPRPVCAALSGCKIISGTGCPPGYRH
+    >1crn.1.A offset=0
+    TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN
+
+Headers like ``>1crnA`` are not accepted, assembly ID and chain name need to be separated by dots.
+
+Alignment mode in workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**This is done in your workflow, before the SWISS-MODEL tool, not by the tool itself.**
+
+To model many alignments, put them into one multi-FASTA file with alternating target and template records and run the *Split file to dataset collection* tool on it:
+
+- file type: FASTA
+- "Number of records per file ('chunk mode')" with a chunk size of 2
+- method to allocate records: "Maintain record order"
+
+The resulting collection goes into the alignment file input of the SWISS-MODEL tool in batch mode. Do not use the default "Alternate output files" allocation, it breaks up the target-template pairs.
+
 
 User template mode
 ------------------
@@ -393,6 +432,13 @@ User template mode options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Target sequence: sequence to be modelled (provide multiple sequences for heteromers)
 - Template coordinates file: your template file, must be PDB formatted
+
+User template mode in workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**This is done in your workflow, before the SWISS-MODEL tool, not by the tool itself.**
+
+In batch mode, target sequences and templates can both be collections. Galaxy pairs two collections by position, not by name: give target FASTA files and template files the same names and run *Sort collection* on both, if needed. A single template dataset with a collection of target sequences models every target on that template. Any other assignment needs to be prepared in the workflow, e.g. all combinations of targets and templates can be produced with the *Flat Cross Product* or *Nested Cross Product* tools.
 
 Attribution/ License
 ~~~~~~~~~~~~~~~~~~~~
