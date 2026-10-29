@@ -26,31 +26,31 @@ mkdir -p 'output_dir/'
                           $output_format.modelcif
                           $output_format.pdb
                           #if $project_title
-                            --project-title '${project_title}'
-                          #end if
-                          #if $input_mode.mode == 'single'
-                            #if $setup.project_type == 'alignment'
-                              --target-sequence='${setup.target_sequence}'
-                              --template-sequence='${setup.template_sequence}'
-                            #else
-                              #for $i in $setup.target_list
-                                '${i.sequence}'
-                              #end for
-                            #end if
-                          #else
-                            #if $setup.project_type == 'alignment'
-                              '${setup.alignment_file}'
-                            #else
-                              '${setup.target_sequences}'
-                            #end if
+                            --project-title='${project_title}'
                           #end if
                           #if $setup.project_type == 'alignment' and $input_mode.mode == 'single'
+                            --target-sequence='${setup.target_sequence}'
+                            --template-sequence='${setup.template_sequence}'
                             --pdb-id '${setup.pdb_id}'
                             --assembly-id '${setup.assembly_id}'
                             --auth-asym-id '${setup.auth_asym_id}'
                             --template-seqres-offset '${setup.template_seqres_offset}'
                           #elif $setup.project_type == 'usertemplate'
                             --template-file '${setup.template_file}'
+                          #end if
+                          ## positionals last, after '--' sequences starting
+                          ## with '-' are not taken for options
+                          #if $input_mode.mode == 'single'
+                            #if $setup.project_type != 'alignment'
+                              --
+                              #for $i in $setup.target_list
+                                '${i.sequence}'
+                              #end for
+                            #end if
+                          #elif $setup.project_type == 'alignment'
+                            '${setup.alignment_file}'
+                          #else
+                            '${setup.target_sequences}'
                           #end if
 && find output_dir -type f -name '*.gz' -exec gzip -d {} +
 ]]>
@@ -111,7 +111,7 @@ Template Library</a>.
                         <param name="template_sequence" type="text" optional="false"
                                label="Template sequence"
                                help="Template sequence as part of the alignment"/>
-                        <param name="template_seqres_offset" type="integer" value="0" optional="false" label="Template sequence offset">
+                        <param name="template_seqres_offset" type="integer" min="0" value="0" optional="false" label="Template sequence offset">
                             <help><![CDATA[
 Offset of the template sequence segment with respect to the full template
 sequence.
@@ -238,6 +238,55 @@ sequence.
                         <param name="sequence" value="MVVKAVCVINGDAKGTVFFEQESSGTPVKVSGEVCGL"/>
                     </repeat>
                     <param name="template_file" value="model_01.pdb"/>
+                </conditional>
+            </conditional>
+            <assert_stderr>
+                <has_line line="SWISS-MODEL token is not provided in credentials!"/>
+            </assert_stderr>
+        </test>
+        <!-- single job, title starting with '-', pasted FASTA header, no token, fail -->
+        <test expect_exit_code="1" expect_failure="true">
+            <param name="project_title" value="-my run"/>
+            <conditional name="input_mode">
+                <param name="mode" value="single"/>
+                <conditional name="project">
+                    <param name="project_type" value="automodel"/>
+                    <repeat name="target_list">
+                        <param name="sequence" value=">seq1 MVVKAVCVINGDAKGTVFFEQESSGTPVKVSGEVCGL"/>
+                    </repeat>
+                </conditional>
+            </conditional>
+            <assert_stderr>
+                <has_line line="SWISS-MODEL token is not provided in credentials!"/>
+            </assert_stderr>
+        </test>
+        <!-- single job, sequence starting with '-', no token, fail -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="single"/>
+                <conditional name="project">
+                    <param name="project_type" value="automodel"/>
+                    <repeat name="target_list">
+                        <param name="sequence" value="-MVVKAVCVINGDAKGTVFFEQESSGTPVKVSGEVCGL"/>
+                    </repeat>
+                </conditional>
+            </conditional>
+            <assert_stderr>
+                <has_line line="SWISS-MODEL token is not provided in credentials!"/>
+            </assert_stderr>
+        </test>
+        <!-- single job, alignment with leading gaps, no token, fail -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="single"/>
+                <conditional name="project">
+                    <param name="project_type" value="alignment"/>
+                    <param name="target_sequence" value="-MVVKAVCVINGDAKGTVFFEQESSGTPVKVSG"/>
+                    <param name="template_sequence" value="--VVKAVCVINGDAKGTVFFEQESSGTPV---"/>
+                    <param name="pdb_id" value="1AKE"/>
+                    <param name="assembly_id" value="0"/>
+                    <param name="auth_asym_id" value="A"/>
+                    <param name="template_seqres_offset" value="0"/>
                 </conditional>
             </conditional>
             <assert_stderr>

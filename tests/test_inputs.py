@@ -43,6 +43,12 @@ def test_defastarise_targets(tmp_path):
     assert w._defastarise_targets(str(fas)) == ["MKVLL", "GG"]
 
 
+def test_read_fasta_byte_order_mark(tmp_path):
+    fas = tmp_path / "bom.fas"
+    fas.write_bytes(b"\xef\xbb\xbf>t1\nMKV\n")
+    assert w._read_fasta(str(fas)) == [("t1", "MKV")]
+
+
 def _aln(tmp_path, text, newline="\n"):
     fas = tmp_path / "aln.fas"
     fas.write_bytes(text.replace("\n", newline).encode())

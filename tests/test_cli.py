@@ -63,6 +63,9 @@ def fixture_files(tmp_path):
             *ALIGNMENT_OPTS,
         ],
         ["single", "usertemplate", "{out}", "MKV", "GGA", "-f", "{pdb}"],
+        # what the tool XML sends: options first, sequences after '--'
+        ["single", "automodel", "{out}", "--project-title=-x", "--", "-MKV"],
+        ["single", "usertemplate", "{out}", "-f", "{pdb}", "--", "-MKV"],
         ["batch", "automodel", "{out}", "{fas}"],
         ["batch", "alignment", "{out}", "{aln}"],
         ["batch", "usertemplate", "{out}", "{fas}", "-f", "{pdb}"],

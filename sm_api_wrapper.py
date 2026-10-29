@@ -357,7 +357,8 @@ def _read_fasta(fasta_file):
     """
     records = []
 
-    with open(fasta_file, encoding="utf8") as fh:
+    # utf-8-sig drops a byte order mark, as written by some Windows editors
+    with open(fasta_file, encoding="utf-8-sig") as fh:
         for line in fh:
             line = line.strip()
             if line.startswith(">"):
