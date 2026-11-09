@@ -1,0 +1,817 @@
+{
+    "a_galaxy_workflow": "true",
+    "annotation": "Build SWISS-MODEL homology models for all sequences of a multi-FASTA file, filter models by GMQE threshold and build structure-based trees with FoldTree.",
+    "comments": [],
+    "creator": [
+        {
+            "class": "Person",
+            "identifier": "https://orcid.org/0000-0002-9673-9103",
+            "name": "Stefan Bienert"
+        }
+    ],
+    "doi": [
+        "https://doi.org/10.1093/nar/gky427",
+        "https://doi.org/10.1038/s41594-025-01649-8"
+    ],
+    "format-version": "0.1",
+    "help": "## Before you run\n\n- **FASTA headers become names.** Each header is used to name the per-sequence results and, with special characters replaced by `_`, the leaves of the trees. Keep headers short and make sure every header is unique.\n- **Project title** is optional. Use it to find the SWISS-MODEL projects and the model collections in your history later.\n\n## Reading the results\n\n- Start with **Models passing GMQE filter**. It shows which models made it into the trees and their GMQE values.\n- The **FoldTree metric tree** is the main result. Compare it with the **TM-score tree** and **LDDT tree**: branches supported by all three are more reliable.\n- All models, including those that failed the filter, are kept in **Model PDB files** and **Model metadata**.\n\n## Troubleshooting\n\n- **FoldTree fails or produces no tree:** check **Models passing GMQE filter**. FoldTree needs at least two structures; if fewer models pass, there is nothing to build a tree from.\n- **A sequence has no models:** SWISS-MODEL found no suitable template for it, or the modelling job failed. Open the failed job's details to see the message from SWISS-MODEL.\n- **Fewer models than expected in the trees:** models with a GMQE below the provided threshold are removed. The threshold is set in the step \"Filter by GMQE\".",
+    "license": "BSD-3-Clause",
+    "name": "SWISS-MODEL to FoldTree",
+    "readme": "# SWISS-MODEL to FoldTree\n\nBuilds homology models for a set of protein sequences with SWISS-MODEL, keeps only the models of sufficient quality and builds structure-based trees from them with FoldTree.\n\n## Inputs\n\n- **Project title** (optional): used as the SWISS-MODEL project title and in the names of the model collections. If left empty, SWISS-MODEL uses \"Untitled project\".\n- **Multi-FASTA file**: the protein sequences to model, one FASTA record per target.\n\n## What happens\n\n1. The multi-FASTA file is split into one dataset per sequence.\n2. SWISS-MODEL (automodel) builds homology models for each sequence. This calls the SWISS-MODEL API, so runtime depends on the SWISS-MODEL server.\n3. The GMQE value of each model is read from its metadata, and only models with GMQE of at least the provided threshold are kept.\n4. The PDB files of all passing models are collected into one list and passed to FoldTree.\n\n## Outputs\n\n- **Model PDB files** and **Model metadata**: all SWISS-MODEL results, grouped by sequence.\n- **Models passing GMQE filter**: table of the models that passed (sequence, model, GMQE).\n- **FoldTree metric tree**, **TM-score tree**, **LDDT tree**: Newick trees of the passing models. The FoldTree metric tree is the main result; the other two are for comparison.\n\n## Notes and limitations\n\n- Tree leaf names are built from the FASTA headers and model names. Characters such as `|`, `:` and spaces are replaced by `_`.\n- FoldTree needs at least two structures. If fewer than two models pass the filter, no tree can be built.\n- FoldTree's own pLDDT filter is switched off, because SWISS-MODEL PDB files do not contain AlphaFold pLDDT values.\n",
+    "report": {
+        "markdown": "\n# Workflow Execution Report\n\n## Workflow Inputs\n```galaxy\ninvocation_inputs()\n```\n\n## Workflow Outputs\n```galaxy\ninvocation_outputs()\n```\n\n## Workflow\n```galaxy\nworkflow_display()\n```\n\r\n```galaxy\ninvocation_inputs()\n```\r\n"
+    },
+    "steps": {
+        "0": {
+            "annotation": "Optional project title used for SWISS-MODEL and for naming the model collections. Do not rename this input: the rename actions reference its label.",
+            "content_id": null,
+            "errors": null,
+            "id": 0,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Optional project title used for SWISS-MODEL and for naming the model collections. Do not rename this input: the rename actions reference its label.",
+                    "name": "Project title"
+                }
+            ],
+            "label": "Project title",
+            "name": "Input parameter",
+            "outputs": [],
+            "position": {
+                "left": 0,
+                "top": 190
+            },
+            "tool_id": null,
+            "tool_state": "{\"default\": \"Untitled project\", \"multiple\": false, \"validators\": [], \"parameter_type\": \"text\", \"optional\": true}",
+            "tool_version": null,
+            "type": "parameter_input",
+            "uuid": "e6caf324-9311-444a-a1c9-5b69fa877c83",
+            "when": null,
+            "workflow_outputs": []
+        },
+        "1": {
+            "annotation": "Quality threshold used for filtering models.",
+            "content_id": null,
+            "errors": null,
+            "id": 1,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Quality threshold used for filtering models.",
+                    "name": "GMQE threshold"
+                }
+            ],
+            "label": "GMQE threshold",
+            "name": "Input parameter",
+            "outputs": [],
+            "position": {
+                "left": 0,
+                "top": 270
+            },
+            "tool_id": null,
+            "tool_state": "{\"default\": 0.7, \"validators\": [{\"min\": null, \"max\": null, \"negate\": false, \"type\": \"in_range\"}], \"parameter_type\": \"float\", \"optional\": false}",
+            "tool_version": null,
+            "type": "parameter_input",
+            "uuid": "42f8732d-ac7b-4531-90c6-9a1dde3b7f05",
+            "when": null,
+            "workflow_outputs": []
+        },
+        "2": {
+            "annotation": "Protein sequences to model, one FASTA record per target.",
+            "content_id": null,
+            "errors": null,
+            "id": 2,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Protein sequences to model, one FASTA record per target.",
+                    "name": "Multi-FASTA file"
+                }
+            ],
+            "label": "Multi-FASTA file",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "left": 0,
+                "top": 370
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "e58f32b0-df00-4805-a5c3-108238343098",
+            "when": null,
+            "workflow_outputs": []
+        },
+        "3": {
+            "annotation": "Combine the GMQE threshold input with the column to create the filter condition.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/iuc/compose_text_param/compose_text_param/0.1.1",
+            "errors": null,
+            "id": 3,
+            "input_connections": {
+                "components_1|param_type|component_value": {
+                    "id": 1,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": "Create filter",
+            "name": "Compose text parameter value",
+            "outputs": [
+                {
+                    "name": "out1",
+                    "type": "expression.json"
+                }
+            ],
+            "position": {
+                "left": 1200,
+                "top": 360
+            },
+            "post_job_actions": {
+                "HideDatasetActionout1": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "out1"
+                },
+                "RenameDatasetActionout1": {
+                    "action_arguments": {
+                        "newname": "GMQE condition for ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "out1"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/compose_text_param/compose_text_param/0.1.1",
+            "tool_shed_repository": {
+                "changeset_revision": "e188c9826e0f",
+                "name": "compose_text_param",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"components\": [{\"__index__\": 0, \"param_type\": {\"select_param_type\": \"text\", \"__current_case__\": 0, \"component_value\": \"c2>=\"}}, {\"__index__\": 1, \"param_type\": {\"select_param_type\": \"float\", \"__current_case__\": 2, \"component_value\": {\"__class__\": \"ConnectedValue\"}}}], \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "0.1.1",
+            "type": "tool",
+            "uuid": "d4d16b30-73e5-4bd7-81e3-a83821960181",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "GMQE condition",
+                    "output_name": "out1",
+                    "uuid": "43b92d18-9486-4dd1-acbe-b8e7fb706494"
+                }
+            ]
+        },
+        "4": {
+            "annotation": "Split the multi-FASTA file into one dataset per sequence.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/rnateam/splitfasta/rbc_splitfasta/0.5.2",
+            "errors": null,
+            "id": 4,
+            "input_connections": {
+                "inputFile": {
+                    "id": 2,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": "Split multi-FASTA file",
+            "name": "Split Fasta",
+            "outputs": [
+                {
+                    "name": "splitted_fasta",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 300,
+                "top": 290
+            },
+            "post_job_actions": {
+                "HideDatasetActionsplitted_fasta": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "splitted_fasta"
+                },
+                "RenameDatasetActionsplitted_fasta": {
+                    "action_arguments": {
+                        "newname": "Sequences of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "splitted_fasta"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/rnateam/splitfasta/rbc_splitfasta/0.5.2",
+            "tool_shed_repository": {
+                "changeset_revision": "c6e3d6cf49df",
+                "name": "splitfasta",
+                "owner": "rnateam",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"inputFile\": {\"__class__\": \"ConnectedValue\"}, \"splitmode\": {\"splitmode_select\": \"each\", \"__current_case__\": 1}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "0.5.2",
+            "type": "tool",
+            "uuid": "fd84601b-ced2-493e-a3bb-abd543ed15b9",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Single sequences",
+                    "output_name": "splitted_fasta",
+                    "uuid": "d7134e5a-1eed-44b0-9270-ecc7b99f035a"
+                }
+            ]
+        },
+        "5": {
+            "annotation": "Build homology models with SWISS-MODEL (automodel), one run per sequence.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/iuc/swissmodel_modelling_api/swissmodel_modelling_api/3.0.1+galaxy0",
+            "errors": null,
+            "id": 5,
+            "input_connections": {
+                "project_title": {
+                    "id": 0,
+                    "output_name": "output"
+                },
+                "project|target_sequences": {
+                    "id": 4,
+                    "output_name": "splitted_fasta"
+                }
+            },
+            "inputs": [
+                {
+                    "description": "runtime parameter for tool SWISS-MODEL Modelling API",
+                    "name": "project"
+                }
+            ],
+            "label": "Build homology models",
+            "name": "SWISS-MODEL Modelling API",
+            "outputs": [
+                {
+                    "name": "json_collection",
+                    "type": "input"
+                },
+                {
+                    "name": "pdb_collection",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 600,
+                "top": 170
+            },
+            "post_job_actions": {
+                "RenameDatasetActionjson_collection": {
+                    "action_arguments": {
+                        "newname": "Metadata files for ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "json_collection"
+                },
+                "RenameDatasetActionpdb_collection": {
+                    "action_arguments": {
+                        "newname": "PDB files for ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "pdb_collection"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/swissmodel_modelling_api/swissmodel_modelling_api/3.0.1+galaxy0",
+            "tool_shed_repository": {
+                "changeset_revision": "44ced93ca473",
+                "name": "swissmodel_modelling_api",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"output_format\": {\"modelcif\": false, \"pdb\": true}, \"project\": {\"project_type\": \"automodel\", \"__current_case__\": 0, \"target_sequences\": {\"__class__\": \"ConnectedValue\"}}, \"project_title\": {\"__class__\": \"ConnectedValue\"}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "3.0.1+galaxy0",
+            "type": "tool",
+            "uuid": "7227030c-c68b-4089-9bdd-6bbdb5a251bf",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Model metadata",
+                    "output_name": "json_collection",
+                    "uuid": "b577ff91-fd9b-4bd7-8540-b6562e67c89e"
+                },
+                {
+                    "label": "Model PDB files",
+                    "output_name": "pdb_collection",
+                    "uuid": "981abd67-6946-4249-b317-9ae9ee24d67d"
+                }
+            ]
+        },
+        "6": {
+            "annotation": "Extract the GMQE value from each model's metadata (JSON) as tabular output.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/iuc/jq/jq/1.8.2+galaxy0",
+            "errors": null,
+            "id": 6,
+            "input_connections": {
+                "input_source|input": {
+                    "id": 5,
+                    "output_name": "json_collection"
+                }
+            },
+            "inputs": [
+                {
+                    "description": "runtime parameter for tool jq",
+                    "name": "input_source"
+                }
+            ],
+            "label": "Extract GMQE",
+            "name": "jq",
+            "outputs": [
+                {
+                    "name": "output",
+                    "type": "json"
+                }
+            ],
+            "position": {
+                "left": 900,
+                "top": 170
+            },
+            "post_job_actions": {
+                "HideDatasetActionoutput": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "output"
+                },
+                "RenameDatasetActionoutput": {
+                    "action_arguments": {
+                        "newname": "GMQE values of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/jq/jq/1.8.2+galaxy0",
+            "tool_shed_repository": {
+                "changeset_revision": "4e62e523c2b6",
+                "name": "jq",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"arguments\": {\"named_args\": [], \"named_json_args\": [], \"positional_arguments\": {\"mode\": \"none\", \"__current_case__\": 0}}, \"filter\": \"[.gmqe]\", \"input_options\": {\"raw_input\": false, \"slurp\": false}, \"input_source\": {\"mode\": \"dataset\", \"__current_case__\": 0, \"input\": {\"__class__\": \"ConnectedValue\"}}, \"output_options\": {\"raw_output\": false, \"compact_output\": false, \"ascii_output\": false, \"sort_keys\": false, \"indentation\": {\"mode\": \"default\", \"__current_case__\": 0}, \"exit_status\": false, \"tsv_output\": true}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "1.8.2+galaxy0",
+            "type": "tool",
+            "uuid": "148fb5e8-1b90-409f-a2d6-5d8beacd7745",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "GMQE values",
+                    "output_name": "output",
+                    "uuid": "f7a2333a-901b-4aa3-8035-b38a77dc828d"
+                }
+            ]
+        },
+        "7": {
+            "annotation": "Turn the per-sequence lists of PDB files into a single list. Identifiers become sequence name and model name, joined by an underscore. Needed for FoldTree.",
+            "content_id": "__FLATTEN__",
+            "errors": null,
+            "id": 7,
+            "input_connections": {
+                "input": {
+                    "id": 5,
+                    "output_name": "pdb_collection"
+                }
+            },
+            "inputs": [],
+            "label": "Flatten PDB files",
+            "name": "Flatten collection",
+            "outputs": [
+                {
+                    "name": "output",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 1500,
+                "top": 0
+            },
+            "post_job_actions": {
+                "HideDatasetActionoutput": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "output"
+                },
+                "RenameDatasetActionoutput": {
+                    "action_arguments": {
+                        "newname": "All PDB files of ${Project title} as single list"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output"
+                }
+            },
+            "tool_id": "__FLATTEN__",
+            "tool_state": "{\"input\": {\"__class__\": \"ConnectedValue\"}, \"join_identifier\": \"_\", \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "1.0.0",
+            "type": "tool",
+            "uuid": "14ae7034-3d6f-4330-ac75-9dd24791b969",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Single list of PDB files",
+                    "output_name": "output",
+                    "uuid": "9b29067a-9cd0-45e0-ad9b-4db91df9c17c"
+                }
+            ]
+        },
+        "8": {
+            "annotation": "Collect the GMQE values of each sequence's models into one table: model, GMQE.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0",
+            "errors": null,
+            "id": 8,
+            "input_connections": {
+                "input_list": {
+                    "id": 6,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": "Collect GMQE per sequence",
+            "name": "Collapse Collection",
+            "outputs": [
+                {
+                    "name": "output",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 1200,
+                "top": 170
+            },
+            "post_job_actions": {
+                "RenameDatasetActionoutput": {
+                    "action_arguments": {
+                        "newname": "GMQE tables of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0",
+            "tool_shed_repository": {
+                "changeset_revision": "90981f86000f",
+                "name": "collapse_collections",
+                "owner": "nml",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"filename\": {\"add_name\": true, \"__current_case__\": 0, \"place_name\": \"same_multiple\"}, \"input_list\": {\"__class__\": \"ConnectedValue\"}, \"one_header\": false, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "5.1.0",
+            "type": "tool",
+            "uuid": "57399698-997b-4240-ba07-2c50e3e99659",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "GMQE tables",
+                    "output_name": "output",
+                    "uuid": "4236596d-2ce9-4879-9e8a-600718a52142"
+                }
+            ]
+        },
+        "9": {
+            "annotation": "Keep only models with a GMQE below or equal to the threshold parameter.",
+            "content_id": "Filter1",
+            "errors": null,
+            "id": 9,
+            "input_connections": {
+                "cond": {
+                    "id": 3,
+                    "output_name": "out1"
+                },
+                "input": {
+                    "id": 8,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": "Filter by GMQE",
+            "name": "Filter",
+            "outputs": [
+                {
+                    "name": "out_file1",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 1500,
+                "top": 170
+            },
+            "post_job_actions": {
+                "DeleteIntermediatesActionout_file1": {
+                    "action_arguments": {},
+                    "action_type": "DeleteIntermediatesAction",
+                    "output_name": "out_file1"
+                },
+                "RenameDatasetActionout_file1": {
+                    "action_arguments": {
+                        "newname": "Models passing GMQE >= ${GMQE threshold} of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "out_file1"
+                }
+            },
+            "tool_id": "Filter1",
+            "tool_state": "{\"cond\": {\"__class__\": \"ConnectedValue\"}, \"header_lines\": \"0\", \"input\": {\"__class__\": \"ConnectedValue\"}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "1.1.1",
+            "type": "tool",
+            "uuid": "97b10a5f-b9b5-4ae9-9e45-5ec7639b3be9",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Filtered tables",
+                    "output_name": "out_file1",
+                    "uuid": "2a9c0271-609a-44eb-82ac-dde7aba26d1a"
+                }
+            ]
+        },
+        "10": {
+            "annotation": "Collect the passing models of all sequences into one table: sequence, model, GMQE.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0",
+            "errors": null,
+            "id": 10,
+            "input_connections": {
+                "input_list": {
+                    "id": 9,
+                    "output_name": "out_file1"
+                }
+            },
+            "inputs": [],
+            "label": "Collect passing models",
+            "name": "Collapse Collection",
+            "outputs": [
+                {
+                    "name": "output",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 1800,
+                "top": 170
+            },
+            "post_job_actions": {
+                "HideDatasetActionoutput": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "output"
+                },
+                "RenameDatasetActionoutput": {
+                    "action_arguments": {
+                        "newname": "Single list of models passing GMQE filter for ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/nml/collapse_collections/collapse_dataset/5.1.0",
+            "tool_shed_repository": {
+                "changeset_revision": "90981f86000f",
+                "name": "collapse_collections",
+                "owner": "nml",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"filename\": {\"add_name\": true, \"__current_case__\": 0, \"place_name\": \"same_multiple\"}, \"input_list\": {\"__class__\": \"ConnectedValue\"}, \"one_header\": false, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "5.1.0",
+            "type": "tool",
+            "uuid": "6e4c13f8-25b6-466b-aad2-9509520b7edc",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Models passing GMQE filter",
+                    "output_name": "output",
+                    "uuid": "9fd592f4-175c-4371-9944-000839487f83"
+                }
+            ]
+        },
+        "11": {
+            "annotation": "Join sequence and model into the identifiers used by the flattened PDB list.",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0",
+            "errors": null,
+            "id": 11,
+            "input_connections": {
+                "infile": {
+                    "id": 10,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": "Build model identifiers",
+            "name": "Text reformatting",
+            "outputs": [
+                {
+                    "name": "outfile",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 2100,
+                "top": 170
+            },
+            "post_job_actions": {
+                "HideDatasetActionoutfile": {
+                    "action_arguments": {},
+                    "action_type": "HideDatasetAction",
+                    "output_name": "outfile"
+                },
+                "RenameDatasetActionoutfile": {
+                    "action_arguments": {
+                        "newname": "Model identifiers for ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "outfile"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_awk_tool/9.11+galaxy0",
+            "tool_shed_repository": {
+                "changeset_revision": "30b60202d990",
+                "name": "text_processing",
+                "owner": "bgruening",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"code\": \"BEGIN { FS = \\\"\\\\t\\\" } { print $1 \\\"_\\\" $2 }\", \"infile\": {\"__class__\": \"ConnectedValue\"}, \"variables\": [], \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "9.11+galaxy0",
+            "type": "tool",
+            "uuid": "88311cc0-bab5-4bca-ad1f-bd7267fd4121",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "Model identifiers",
+                    "output_name": "outfile",
+                    "uuid": "7a5eebae-3bf5-4bd0-af72-f1a7f1120409"
+                }
+            ]
+        },
+        "12": {
+            "annotation": "Keep only PDB files of models that passed the GMQE filter.",
+            "content_id": "__FILTER_FROM_FILE__",
+            "errors": null,
+            "id": 12,
+            "input_connections": {
+                "how|filter_source": {
+                    "id": 11,
+                    "output_name": "outfile"
+                },
+                "input": {
+                    "id": 7,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [
+                {
+                    "description": "runtime parameter for tool Filter collection",
+                    "name": "how"
+                }
+            ],
+            "label": "Select passing PDB files",
+            "name": "Filter collection",
+            "outputs": [
+                {
+                    "name": "output_filtered",
+                    "type": "input"
+                },
+                {
+                    "name": "output_discarded",
+                    "type": "input"
+                }
+            ],
+            "position": {
+                "left": 2400,
+                "top": 150
+            },
+            "post_job_actions": {
+                "RenameDatasetActionoutput_discarded": {
+                    "action_arguments": {
+                        "newname": "Discarded models of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output_discarded"
+                },
+                "RenameDatasetActionoutput_filtered": {
+                    "action_arguments": {
+                        "newname": "Passing models of ${Project title}"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output_filtered"
+                }
+            },
+            "tool_id": "__FILTER_FROM_FILE__",
+            "tool_state": "{\"how\": {\"how_filter\": \"remove_if_absent\", \"__current_case__\": 0, \"filter_source\": {\"__class__\": \"ConnectedValue\"}}, \"input\": {\"__class__\": \"ConnectedValue\"}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "1.0.0",
+            "type": "tool",
+            "uuid": "f61730f1-1ee9-4b4f-940f-74bbea8800f8",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "PDB files passing GMQE filter",
+                    "output_name": "output_filtered",
+                    "uuid": "fb950863-035d-4601-8852-bdca3013c7a2"
+                },
+                {
+                    "label": "Discarded PDB files",
+                    "output_name": "output_discarded",
+                    "uuid": "bc803dc5-4875-4e36-9959-ba2186f1fc67"
+                }
+            ]
+        },
+        "13": {
+            "annotation": "Build structure-based trees from the selected models (FoldTree metric, TM-score and LDDT trees).",
+            "content_id": "toolshed.g2.bx.psu.edu/repos/iuc/foldtree/foldtree/1.1.1+galaxy0",
+            "errors": null,
+            "id": 13,
+            "input_connections": {
+                "input_type|input_table": {
+                    "id": 12,
+                    "output_name": "output_filtered"
+                }
+            },
+            "inputs": [
+                {
+                    "description": "runtime parameter for tool Foldtree",
+                    "name": "input_type"
+                }
+            ],
+            "label": "Build structural trees",
+            "name": "Foldtree",
+            "outputs": [
+                {
+                    "name": "output_tree_ft",
+                    "type": "newick"
+                },
+                {
+                    "name": "output_tree_aln",
+                    "type": "newick"
+                },
+                {
+                    "name": "output_tree_lddt",
+                    "type": "newick"
+                }
+            ],
+            "position": {
+                "left": 2700,
+                "top": 150
+            },
+            "post_job_actions": {
+                "RenameDatasetActionoutput_tree_aln": {
+                    "action_arguments": {
+                        "newname": "Foldtree on ${Project title}: TM tree"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output_tree_aln"
+                },
+                "RenameDatasetActionoutput_tree_ft": {
+                    "action_arguments": {
+                        "newname": "Foldtree on ${Project title}: Foldtree metric tree"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output_tree_ft"
+                },
+                "RenameDatasetActionoutput_tree_lddt": {
+                    "action_arguments": {
+                        "newname": "Foldtree on ${Project title}: LDDT tree"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "output_tree_lddt"
+                }
+            },
+            "tool_id": "toolshed.g2.bx.psu.edu/repos/iuc/foldtree/foldtree/1.1.1+galaxy0",
+            "tool_shed_repository": {
+                "changeset_revision": "83f07cd6d309",
+                "name": "foldtree",
+                "owner": "iuc",
+                "tool_shed": "toolshed.g2.bx.psu.edu"
+            },
+            "tool_state": "{\"filter\": false, \"input_type\": {\"input_type_selector\": \"pdb\", \"__current_case__\": 2, \"input_table\": {\"__class__\": \"ConnectedValue\"}}, \"__page__\": 0, \"__rerun_remap_job_id__\": null}",
+            "tool_uuid": null,
+            "tool_version": "1.1.1+galaxy0",
+            "type": "tool",
+            "uuid": "ad0dc692-60f5-4a3c-b4bf-49c9aa1fcb47",
+            "when": null,
+            "workflow_outputs": [
+                {
+                    "label": "TM-score tree",
+                    "output_name": "output_tree_aln",
+                    "uuid": "b24ac7f7-8e2c-4c81-9ac1-0e33199e6130"
+                },
+                {
+                    "label": "LDDT tree",
+                    "output_name": "output_tree_lddt",
+                    "uuid": "756bd93d-02ad-4ade-aca3-b771ae9221da"
+                },
+                {
+                    "label": "FoldTree metric tree",
+                    "output_name": "output_tree_ft",
+                    "uuid": "e8391f00-ffd4-45db-a509-8f4e57fc327a"
+                }
+            ]
+        }
+    },
+    "tags": [],
+    "uuid": "f01cc9e2-479e-4bbd-b8ac-83daa3602b88",
+    "version": 1
+}
